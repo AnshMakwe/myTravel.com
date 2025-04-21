@@ -1,0 +1,4 @@
+{
+  "ignore": ["backend/autoConfirmScheduler.js", "backend/pendingTickets.json"]
+}
+

@@ -76,6 +76,7 @@ Navigate to chaincode/contract/javascript
 Then run:
 ```bash
   npm install
+  npm install luxon
 ```
 
 ### Navigate to sdk/javascript and run:
@@ -83,6 +84,7 @@ Then run:
   npm install
   cd ..
 ```
+
 ### For fabric netwrok setup run:
 ```bash
   ./startFabric.sh javascript
@@ -102,6 +104,7 @@ Run the following command to stop the network:
 Navigate to backend folder backend/ and run:
 ```bash
   npm install
+  npm install dotenv
 ```
 to install dependencies
 

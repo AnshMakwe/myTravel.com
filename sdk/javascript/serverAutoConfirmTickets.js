@@ -1,7 +1,4 @@
-/*
- * serverAutoConfirmTickets.js
- * Auto-confirm tickets for a travel option that is within 2 hours of departure.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

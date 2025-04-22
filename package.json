@@ -6,6 +6,7 @@
     "fabric-ca-client": "^2.2.20",
     "fabric-network": "^2.2.20",
     "fabric-protos": "^2.2.20",
-    "firebase-admin": "^13.2.0"
+    "firebase-admin": "^13.2.0",
+    "luxon": "^3.6.1"
   }
 }

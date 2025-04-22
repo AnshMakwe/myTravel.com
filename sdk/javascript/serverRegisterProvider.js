@@ -1,7 +1,4 @@
-/*
- * serverRegisterProvider.js
- * Register a new service provider on the travel ticket platform.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

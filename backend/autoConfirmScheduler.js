@@ -1,4 +1,3 @@
-// autoConfirmScheduler.js
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');
@@ -6,7 +5,7 @@ const path = require('path');
 const { getPendingTickets, removePendingTicket } = require('./pendingTicketRegistry');
 const { common } = require('fabric-protos');
 
-// Existing function: get current block height
+
 async function getCurrentBlockHeight(identity = 'appUser') {
   try {
     const ccpPath = path.resolve(
@@ -36,7 +35,7 @@ async function getCurrentBlockHeight(identity = 'appUser') {
   }
 }
 
-// Existing function: confirm a ticket
+
 async function confirmTicket(ticketId, identity = 'appUser') {
   try {
     const ccpPath = path.resolve(
@@ -64,7 +63,7 @@ async function confirmTicket(ticketId, identity = 'appUser') {
   }
 }
 
-// Existing block–based check on pending tickets.
+
 async function processPendingTickets() {
   try {
     const identity = 'appUser';
@@ -73,7 +72,7 @@ async function processPendingTickets() {
 
     const pending = getPendingTickets();
     for (const [ticketId, bookingBlock] of Object.entries(pending)) {
-      // Note: The threshold below (>= 2000) is as you have it.
+      
       if (currentHeight - bookingBlock >= 2) {
         console.log(`Ticket ${ticketId} is eligible for confirmation (booked at block ${bookingBlock}).`);
         await confirmTicket(ticketId, identity);
@@ -87,7 +86,7 @@ async function processPendingTickets() {
   }
 }
 
-// NEW: Time-based check for travel options departing within 2 hours
+
 async function processTimeBasedAutoConfirm() {
   try {
     // Require the function that returns all travel options.
@@ -98,8 +97,7 @@ async function processTimeBasedAutoConfirm() {
     const twoHoursMs = 2 * 60 * 1000;
 
     for (const option of travelOptions) {
-      // Construct a Date object for departure time.
-      // Assumes option.departureDate and option.departureTime are in a format compatible with Date.
+      
       const departureTime = new Date(`${option.departureDate}T${option.departureTime}`);
       const timeDiff = departureTime - now;
       console.log(timeDiff);
@@ -142,16 +140,16 @@ async function processTimeBasedAutoConfirm() {
   }
 }
 
-// Combined scheduler: run both block-based and time-based checks.
+
 async function scheduler() {
   await processPendingTickets();
   await processTimeBasedAutoConfirm();
 }
 
-// Run scheduler every minute.
+
 setInterval(scheduler, 5 * 60 * 1000);
 
-// If run directly, process once and exit.
+
 if (require.main === module) {
   scheduler().then(() => process.exit(0)).catch(() => process.exit(1));
 }

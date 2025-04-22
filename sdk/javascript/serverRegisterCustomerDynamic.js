@@ -22,21 +22,21 @@ async function registerCustomerDynamic({ enrollmentID, name, contact }) {
 	);
 	const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 
-	// Create a new CA client.
+
 	const caURL = ccp.certificateAuthorities['ca.org1.example.com'].url;
 	const ca = new FabricCAServices(caURL);
 
-	// Use a consistent wallet path.
+
 	const walletPath = path.join(process.cwd(), 'wallet');
 	const wallet = await Wallets.newFileSystemWallet(walletPath);
 
-	// Check if the identity already exists.
+	
 	const existingIdentity = await wallet.get(enrollmentID);
 	if (existingIdentity) {
   	throw new Error(`An identity for ${enrollmentID} already exists`);
 	}
 
-	// Get admin identity.
+
 	const adminIdentity = await wallet.get('admin');
 	if (!adminIdentity) {
   	throw new Error('Admin identity not found. Run enrollAdmin.js first.');
@@ -44,7 +44,7 @@ async function registerCustomerDynamic({ enrollmentID, name, contact }) {
 	const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
 	const adminUser = await provider.getUserContext(adminIdentity, 'admin');
 
-	// Register the new customer.
+
 	const secret = await ca.register(
   	{
     	affiliation: 'org1.department1',
@@ -59,7 +59,7 @@ async function registerCustomerDynamic({ enrollmentID, name, contact }) {
   	adminUser
 	);
 
-	// Enroll the new customer.
+
 	const enrollment = await ca.enroll({
   	enrollmentID: enrollmentID,
   	enrollmentSecret: secret,

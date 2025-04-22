@@ -23,21 +23,21 @@ async function registerProviderDynamic({ enrollmentID, name, contact, rating, se
     );
     const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 
-    // Create a new CA client.
+
     const caURL = ccp.certificateAuthorities['ca.org1.example.com'].url;
     const ca = new FabricCAServices(caURL);
 
-    // Use a consistent wallet path.
+  
     const walletPath = path.join(process.cwd(), 'wallet');
     const wallet = await Wallets.newFileSystemWallet(walletPath);
 
-    // Check if the provider identity already exists.
+
     const existingIdentity = await wallet.get(enrollmentID);
     if (existingIdentity) {
       throw new Error(`An identity for ${enrollmentID} already exists`);
     }
 
-    // Get admin identity.
+   
     const adminIdentity = await wallet.get('admin');
     if (!adminIdentity) {
       throw new Error('Admin identity not found. Run enrollAdmin.js first.');
@@ -62,7 +62,7 @@ async function registerProviderDynamic({ enrollmentID, name, contact, rating, se
       adminUser
     );
 
-    // Enroll the new provider.
+   
     const enrollment = await ca.enroll({
       enrollmentID: enrollmentID,
       enrollmentSecret: secret,
@@ -80,11 +80,11 @@ async function registerProviderDynamic({ enrollmentID, name, contact, rating, se
       type: 'X.509'
     };
 
-    // Store the new identity in the wallet (using the email).
+  
     await wallet.put(enrollmentID, x509Identity);
     console.log(`Successfully enrolled identity for ${enrollmentID}`);
 
-    // Now invoke the chaincode to register the provider.
+    
     const gw = new Gateway();
     await gw.connect(ccp, {
       wallet,

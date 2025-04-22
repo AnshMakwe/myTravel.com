@@ -15,9 +15,6 @@ const { admin, db } = require('./firebase');
 
 
 
-// --------------------------
-// Import SDK Endpoint Modules
-// --------------------------
 const enrollAdmin = require('../sdk/javascript/enrollAdmin');
 // const enrollAdminOrg2 = require('../sdk/javascript/enrollAdminOrg2');
 const getCustomerDetails = require('../sdk/javascript/getCustomerDetails');
@@ -45,26 +42,20 @@ const deleteTravelOption = require('../sdk/javascript/serverDeleteTravelOption')
 
 const listTravelOptionsSorted1 = require('../sdk/javascript/serverListTravelOptionsSorted1');
 
-// --------------------------
-// Create Express App
-// --------------------------
+
 const app = express();
 const port = process.env.PORT || 8000;
 
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
-// --------------------------
-// Authentication Router (e.g., Firebase Auth)
-// --------------------------
-const authRouter = require('/home/vboxuser/sec-try/fabric-samples/backend/routes/serverAuth');
+
+const authRouter = require('./routes/serverAuth');
 app.use('/auth', authRouter);
 
 
 
-// --------------------------
-// Enrollment Endpoints
-// --------------------------
+
 app.get('/enrollall', async (req, res) => {
   try {
     console.log("Enroll all identities");
@@ -78,11 +69,9 @@ app.get('/enrollall', async (req, res) => {
   }
 });
 
-// --------------------------
-// Customer Endpoints
-// --------------------------
 
-// Dynamic customer registration
+
+
 app.post('/registercustomer', async (req, res) => {
   try {
     const { name, contact, email } = req.body;
@@ -97,7 +86,7 @@ app.post('/registercustomer', async (req, res) => {
   }
 });
 
-// Update customer details endpoint
+
 app.post('/updatecustomerdetails', async (req, res) => {
   try {
     let { newName, newContact, isAnonymous } = req.body;
@@ -122,7 +111,7 @@ app.post('/updatecustomerdetails', async (req, res) => {
 });
 
 
-// Get customer details
+
 app.get('/getcustomerdetails', async (req, res) => {
   try {
     const userEmail = req.query.email;
@@ -136,7 +125,7 @@ app.get('/getcustomerdetails', async (req, res) => {
   }
 });
 
-// Deposit funds
+
 app.post('/depositfunds', async (req, res) => {
   try {
     const { amount } = req.body;
@@ -158,7 +147,7 @@ app.post('/depositfunds', async (req, res) => {
 
 
 
-// Get customer tickets
+
 app.get('/getcustomertickets', async (req, res) => {
   try {
     const userEmail = req.query.email;
@@ -172,8 +161,7 @@ app.get('/getcustomertickets', async (req, res) => {
   }
 });
 
-// Book ticket
-// Book ticket endpoint
+
 app.post('/bookticket', async (req, res) => {
   try {
     const { travelOptionId, seatnumber } = req.body;
@@ -197,8 +185,7 @@ app.post('/bookticket', async (req, res) => {
 
 
 
-// Cancel ticket
-// Cancel ticket endpoint
+
 app.post('/cancelticket', async (req, res) => {
   try {
     const { ticketId, currentTimestamp } = req.body;
@@ -221,7 +208,7 @@ app.post('/cancelticket', async (req, res) => {
 
 
 
-// Reschedule ticket
+
 app.post('/rescheduleticket', async (req, res) => {
   try {
     // Expect old ticket's encoded key, new travel option ID, and current timestamp in the request body
@@ -266,7 +253,7 @@ app.get('/listtraveloptionssorted1', async (req, res) => {
 
 
 
-// Confirm ticket
+
 app.post('/confirmticket', async (req, res) => {
   try {
     const { ticketId } = req.body;
@@ -280,11 +267,9 @@ app.post('/confirmticket', async (req, res) => {
   }
 });
 
-// --------------------------
-// Provider Endpoints
-// --------------------------
 
-// Dynamic provider registration
+
+
 app.post('/registerprovider', async (req, res) => {
   try {
     const { name, contact, rating, email, serviceProvider } = req.body;
@@ -299,7 +284,7 @@ app.post('/registerprovider', async (req, res) => {
   }
 });
 
-// Update provider details
+
 app.post('/updateproviderdetails', async (req, res) => {
   try {
     const { providerEmail, newName, newContact, newRating, isAnonymous } = req.body;
@@ -314,7 +299,7 @@ app.post('/updateproviderdetails', async (req, res) => {
   }
 });
 
-// Add travel option
+
 app.post('/addtraveloption', async (req, res) => {
   try {
     const { providerEmail, source, destination, departureDate, departureTime, transportMode, seatCapacity, basePrice } = req.body;
@@ -329,7 +314,6 @@ app.post('/addtraveloption', async (req, res) => {
   }
 });
 
-// Delete travel option
 app.post('/deletetraveloption', async (req, res) => {
   try {
     const { travelOptionId } = req.body;
@@ -343,7 +327,7 @@ app.post('/deletetraveloption', async (req, res) => {
   }
 });
 
-// Cancel travel listing
+
 app.post('/canceltravellisting', async (req, res) => {
   try {
     const { travelOptionId, providerEmail } = req.body;
@@ -366,8 +350,7 @@ app.post('/canceltravellisting', async (req, res) => {
 
 
 
-// Get provider travel options
-// Get provider travel options
+
 app.get('/getprovidertraveloptions', async (req, res) => {
   try {
     const providerEmail = req.query.email;
@@ -385,7 +368,7 @@ app.get('/getprovidertraveloptions', async (req, res) => {
 
 
 
-// Get provider details
+
 app.get('/getproviderdetails', async (req, res) => {
   try {
     const providerEmail = req.query.email;
@@ -401,11 +384,7 @@ app.get('/getproviderdetails', async (req, res) => {
 
 
 
-// --------------------------
-// Listing and Ticket Endpoints
-// --------------------------
 
-// List travel options (unfiltered)
 app.get('/listtraveloptions', async (req, res) => {
   try {
     const { source, destination } = req.query;
@@ -419,8 +398,7 @@ app.get('/listtraveloptions', async (req, res) => {
   }
 });
 
-// List travel options sorted with filters
-// List travel options sorted with filters
+
 app.get('/listtraveloptionssorted', async (req, res) => {
   try {
     const { source, destination, inputdate, sortBy, minPrice, maxPrice, filterProviderId, onlyAvailable } = req.query;
@@ -451,7 +429,7 @@ app.get('/listtraveloptionssorted', async (req, res) => {
 
 
 
-// Rate provider
+
 app.post('/rateprovider', async (req, res) => {
   try {
     const { ticketId, rating, currentTimestamp } = req.body;
@@ -474,23 +452,23 @@ app.post('/rateprovider', async (req, res) => {
 const deleteCustomer = require('../sdk/javascript/serverDeleteCustomer');
 const deleteProvider = require('../sdk/javascript/serverDeleteProvider');
 
-// Endpoint to delete a customer account.
+
 app.post('/deletecustomer', async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).send('Customer email is required.');
     
-    // Invoke chaincode deletion.
+    
     const chaincodeResult = await deleteCustomer(email);
     
     
     // Delete the customer document from Firestore.
     //await db.collection('customer').doc(email).delete();
     admin.auth().getUserByEmail(email).then((userRecord) => {
-      // Retrieve the user's UID
+     
       const userId = userRecord.uid;
   
-      // Delete the user by UID
+    
       return admin.auth().deleteUser(userId);
     }).then(() => {
       console.log("Successfully deleted user");
@@ -510,22 +488,22 @@ app.post('/deletecustomer', async (req, res) => {
 
 
 
-// Endpoint to delete a provider account.
+
 app.post('/deleteprovider', async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).send('Provider email is required.');
     
-    // Invoke chaincode deletion.
+   
     const chaincodeResult = await deleteProvider(email);
     
-    // Delete the provider document from Firestore.
+   
     //await db.collection('provider').doc(email).delete();
     admin.auth().getUserByEmail(email).then((userRecord) => {
-      // Retrieve the user's UID
+ 
       const userId = userRecord.uid;
   
-      // Delete the user by UID
+  
       return admin.auth().deleteUser(userId);
     }).then(() => {
       console.log("Successfully deleted user");
@@ -563,7 +541,7 @@ const autoConfirmTickets = require('../sdk/javascript/serverAutoConfirmTickets')
 const autoConfirmScheduler = require('./autoConfirmScheduler'); // Adjust the path if needed
 
 
-// New endpoint: get all travel options.
+
 app.get('/getalltraveloptions', async (req, res) => {
   try {
     const result = await getAllTravelOptions();
@@ -573,7 +551,7 @@ app.get('/getalltraveloptions', async (req, res) => {
   }
 });
 
-// Auto-confirm endpoint (unchanged)
+
 app.post('/autoConfirmTickets', async (req, res) => {
   try {
     const { travelOptionId, currentTimestamp, identityEmail } = req.body;
@@ -592,9 +570,6 @@ app.post('/autoConfirmTickets', async (req, res) => {
 
 
 
-// --------------------------
-// Root Endpoint
-// --------------------------
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 

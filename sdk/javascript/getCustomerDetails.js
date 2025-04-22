@@ -8,7 +8,7 @@ async function getCustomerDetails(userEmail) {
 	if (!userEmail) {
     	throw new Error('User email parameter is required.');
 	}
-	// Load connection profile for Org1.
+
 	const ccpPath = path.resolve(
   	__dirname,
   	'..',
@@ -21,15 +21,15 @@ async function getCustomerDetails(userEmail) {
 	);
 	const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 
-	// Use a consistent wallet path.
+
 	const walletPath = path.join(process.cwd(), 'wallet');
 	const wallet = await Wallets.newFileSystemWallet(walletPath);
 
-	// Debug: list wallet identities.
+
 	const identities = await wallet.list();
 	console.log('Wallet identities:', identities);
 
-	// Check for the identity.
+	
 	const identity = await wallet.get(userEmail);
 	if (!identity) {
   	throw new Error(`Identity not found in wallet: ${userEmail}`);

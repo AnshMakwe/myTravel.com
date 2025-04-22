@@ -1,7 +1,4 @@
-/*
- * serverBookTicket.js
- * Book a ticket for a given travel option and add it to the pending registry.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

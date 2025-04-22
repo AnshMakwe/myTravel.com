@@ -1,8 +1,4 @@
-/*
- * serverUpdateCustomerDetails.js
- * Update details for an existing customer.
- * Accepts newName, newContact, isAnonymous (true/false) and identityEmail.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

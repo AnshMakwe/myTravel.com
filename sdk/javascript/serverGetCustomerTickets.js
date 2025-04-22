@@ -1,7 +1,4 @@
-/*
- * serverGetCustomerTickets.js
- * Get all tickets booked by the customer.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

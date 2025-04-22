@@ -1,7 +1,4 @@
-/*
- * serverListTravelOptions.js
- * List travel options for a given source and destination.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

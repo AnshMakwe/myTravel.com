@@ -1,7 +1,4 @@
-/*
- * serverDeleteProvider.js
- * Delete a provider account and cancel all travel options with refunds.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');
@@ -49,24 +46,22 @@ async function deleteProvider(identityEmail) {
     console.log(`Transaction result: ${result.toString()}`);
 
     await gateway.disconnect();
-    // Initialize Fabric CA client
+
     const caURL = ccp.certificateAuthorities['ca.org1.example.com'].url;
     const ca = new FabricCAServices(caURL);
     
     await ca.revoke({ enrollmentID: identityEmail, reason: 'cessation of operation' }, adminUser);
     
-    // Delete the customer's identity from the CA database.
-    // Use the CA's identity service.
+  
     const identityService = ca.newIdentityService();
     console.log(`Deleting identity for ${identityEmail} from CA`);
     await identityService.delete(identityEmail, adminUser);
 
-    // Remove customer identity from the wallet.
+
     console.log(`Removing customer identity from wallet: ${identityEmail}`);
     await wallet.remove(identityEmail);
     console.log(`Customer identity removed from wallet.`);
 
-    // Optionally, delete the customer record from Firebase here.
     
     return result.toString();
   } catch (error) {

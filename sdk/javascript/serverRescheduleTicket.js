@@ -1,7 +1,4 @@
-/*
- * serverRescheduleTicket.js
- * Reschedule an existing ticket.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

@@ -21,11 +21,10 @@ async function getProviderDetails(providerEmail) {
 	);
 	const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
 
-	// Use a consistent wallet path.
 	const walletPath = path.join(process.cwd(), 'wallet');
 	const wallet = await Wallets.newFileSystemWallet(walletPath);
 
-	// Look up provider identity using providerEmail.
+
 	const identity = await wallet.get(providerEmail);
 	if (!identity) {
   	throw new Error(`An identity for the provider "${providerEmail}" does not exist in the wallet`);

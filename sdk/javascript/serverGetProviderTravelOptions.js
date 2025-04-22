@@ -1,7 +1,4 @@
-/*
- * serverGetProviderTravelOptions.js
- * Get all travel options registered by the provider.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

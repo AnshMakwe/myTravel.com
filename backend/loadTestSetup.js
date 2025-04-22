@@ -2,7 +2,7 @@
 const axios = require('axios');
 const fs    = require('fs');
 
-// adjust if your API is on a different host/port
+
 const API = axios.create({ baseURL: process.env.API_BASE_URL || 'http://localhost:8000' });
 
 async function registerCustomers(n = 500) {
@@ -42,7 +42,7 @@ async function registerProviders(n = 500) {
 async function addTravelOptions(providers, perProvider = 5) {
   const travelOptions = [];
 
-  // 10 major Indian cities
+
   const cities = [
     'Mumbai','Delhi','Bangalore','Chennai','Hyderabad',
     'Kolkata','Pune','Ahmedabad','Jaipur','Lucknow'

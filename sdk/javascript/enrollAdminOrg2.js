@@ -6,18 +6,18 @@ const path = require('path');
 
 async function enrollAdminOrg2() {
 	try {
-    	// Load the network configuration for Org2.
+ 
     	const ccpPath = path.resolve(__dirname, '..', '..', 'test-network', 'organizations', 'peerOrganizations', 'org2.example.com', 'connection-org2.json');
     	const ccp = JSON.parse(fs.readFileSync(ccpPath, 'utf8'));
-    	// Create a new CA client for interacting with the CA for Org2.
+    	
     	const caInfo = ccp.certificateAuthorities['ca.org2.example.com'];
     	const caTLSCACerts = caInfo.tlsCACerts.pem;
     	const ca = new FabricCAServices(caInfo.url, { trustedRoots: caTLSCACerts, verify: false }, caInfo.caName);
-    	// Create a new file system-based wallet for managing identities.
+   
     	const walletPath = path.join(process.cwd(), 'wallet');
     	const wallet = await Wallets.newFileSystemWallet(walletPath);
     	console.log(`Wallet path: ${walletPath}`);
-    	// Check to see if the admin user for Org2 is already enrolled.
+   
     	const identity = await wallet.get('adminOrg2');
     	if (identity) {
         	console.log('An identity for the admin user "adminOrg2" already exists in the wallet');

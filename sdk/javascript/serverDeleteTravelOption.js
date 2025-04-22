@@ -1,7 +1,4 @@
-/*
- * serverDeleteTravelOption.js
- * Delete a travel option.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

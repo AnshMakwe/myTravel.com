@@ -1,7 +1,4 @@
-/*
- * serverRegisterCustomer.js
- * Register a new customer on the travel ticket platform.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

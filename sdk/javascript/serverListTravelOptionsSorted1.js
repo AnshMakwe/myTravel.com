@@ -1,8 +1,4 @@
-/*
- * serverListTravelOptionsSorted.js
- * List travel options for a given source and destination, sorted by criteria,
- * with optional filters for price range, provider, and availability.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');
@@ -29,8 +25,7 @@ async function listTravelOptionsSorted1(source, destination, sortBy, minPrice, m
     const wallet = await Wallets.newFileSystemWallet(walletPath);
 
     const gateway = new Gateway();
-    // For sorted listing, we're using a fixed identity ("appUser") here.
-    // (If needed, you can modify this to use a dynamic identity.)
+ 
     await gateway.connect(ccp, { wallet, identity: 'appUser', discovery: { enabled: true, asLocalhost: true } });
 
     const network = await gateway.getNetwork('mychannel');

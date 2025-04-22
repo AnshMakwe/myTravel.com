@@ -24,7 +24,7 @@ import DeleteAccount from './screens/DeleteAccount';
 
 import RescheduleSeatSelection from './screens/RescheduleSeatSelection';
 
-// Import your new SeatSelection component
+
 import SeatSelection from './screens/SeatSelection';
 
 import Navbar from './components/Navbar';

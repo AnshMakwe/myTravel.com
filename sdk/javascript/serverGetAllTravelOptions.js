@@ -1,7 +1,4 @@
-/*
- * serverGetAllTravelOptions.js
- * Get all travel options from the ledger.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');
@@ -15,7 +12,7 @@ async function getAllTravelOptions() {
     const walletPath = path.join(process.cwd(), 'wallet');
     const wallet = await Wallets.newFileSystemWallet(walletPath);
     const gateway = new Gateway();
-    // Use a fixed identity (e.g. "appUser") with permissions.
+
     await gateway.connect(ccp, { wallet, identity: 'appUser', discovery: { enabled: true, asLocalhost: true } });
     const network = await gateway.getNetwork('mychannel');
     const contract = network.getContract('stake');

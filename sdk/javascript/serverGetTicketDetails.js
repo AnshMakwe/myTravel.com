@@ -1,7 +1,4 @@
-/*
- * serverGetTicketDetails.js
- * Get details of a specific ticket.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

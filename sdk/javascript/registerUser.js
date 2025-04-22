@@ -1,7 +1,4 @@
-/*
- * registerUser.js
- * Register a new user (appUser) for Org1.
- */
+
 'use strict';
 const { Wallets } = require('fabric-network');
 const FabricCAServices = require('fabric-ca-client');

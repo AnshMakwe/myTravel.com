@@ -9,12 +9,12 @@ const API = axios.create({
 async function fetchOptions() {
   try {
     const res = await API.get('/getalltraveloptions');
-    // backend returns a JSON string or array
+
     let options = res.data;
     if (typeof options === 'string') {
       options = JSON.parse(options);
     }
-    // only keep id + seatCapacity
+
     const travelOptions = options.map(o => ({
       travelOptionId: o.travelOptionId,
       seatCapacity: o.seatCapacity

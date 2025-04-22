@@ -1,7 +1,4 @@
-/*
- * serverConfirmTicket.js
- * Confirm a ticket by simulating additional block confirmations.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

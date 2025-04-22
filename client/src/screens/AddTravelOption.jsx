@@ -35,7 +35,7 @@ const AddTravelOption = () => {
       navigate('/providerTravelOptions');
     } catch (error) {
       console.error(error.response?.data || error.message);
-      alert("Error booking ticket, same travel option already exists!");
+      alert(error.response?.data);
     }
   };
 

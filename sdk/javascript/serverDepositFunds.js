@@ -1,7 +1,4 @@
-/*
- * serverDepositFunds.js
- * Deposit funds into the customer's wallet.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

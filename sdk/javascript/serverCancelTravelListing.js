@@ -1,7 +1,4 @@
-/*
- * serverCancelTravelListing.js
- * Provider cancels a travel listing (refunds all active bookings).
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

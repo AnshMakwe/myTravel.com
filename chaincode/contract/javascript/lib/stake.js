@@ -1,6 +1,7 @@
 'use strict';
 
 const { Contract } = require('fabric-contract-api');
+const { DateTime } = require('luxon');
 
 const customerPrefix = 'customer';
 const providerPrefix = 'provider';
@@ -9,22 +10,14 @@ const ticketPrefix = 'ticket';
 
 class TravelTicket extends Contract {
 
-    /**
-     * Initialize the ledger.
-     * Optionally add pre-defined travel options or sample data.
-     */
+  
     async initLedger(ctx) {
         console.info('=== Initializing Ledger ===');
         // Optionally add pre-defined travel options or sample data here.
         console.info('Ledger initialization complete.');
     }
 
-    /**
-     * Register a new customer.
-     * @param {Context} ctx The transaction context.
-     * @param {String} name Customer name.
-     * @param {String} contact Customer contact details.
-     */
+  
     async registerCustomer(ctx, name, contact) {
         const customerId = ctx.clientIdentity.getID();
         const customerKey = ctx.stub.createCompositeKey(customerPrefix, [customerId]);
@@ -44,13 +37,7 @@ class TravelTicket extends Contract {
         return customerData;
     }
 
-    /**
-     * Register a new service provider.
-     * @param {Context} ctx The transaction context.
-     * @param {String} name Provider name.
-     * @param {String} contact Provider contact details.
-     * @param {Number} rating Provider rating (optional).
-     */
+  
     async registerProvider(ctx, name, contact, rating, serviceProvider) {
         const providerId = ctx.clientIdentity.getID();
         const providerKey = ctx.stub.createCompositeKey(providerPrefix, [providerId]);
@@ -72,10 +59,7 @@ class TravelTicket extends Contract {
         return providerData;
     }
 
-    /**
-     * Update customer details.
-     * Optionally mark the profile as anonymous (contact info set to null).
-     */
+   
     async updateCustomerDetails(ctx, newName, newContact, isAnonymous) {
     const customerId = ctx.clientIdentity.getID();
     const customerKey = ctx.stub.createCompositeKey(customerPrefix, [customerId]);
@@ -85,7 +69,6 @@ class TravelTicket extends Contract {
     }
     let customerData = JSON.parse(customerBytes.toString());
     
-    // Convert isAnonymous to boolean if it is a string.
     const anonymousFlag = typeof isAnonymous === 'string' 
       ? isAnonymous.toLowerCase() === 'true' 
       : Boolean(isAnonymous);
@@ -100,12 +83,7 @@ class TravelTicket extends Contract {
 
 
 
-    
-    /**
-     * Deposit funds into the customer's wallet.
-     * @param {Context} ctx The transaction context.
-     * @param {String} amount The amount to deposit.
-     */
+
     async depositFunds(ctx, amount) {
         const customerId = ctx.clientIdentity.getID();
         const customerKey = ctx.stub.createCompositeKey(customerPrefix, [customerId]);
@@ -123,10 +101,7 @@ class TravelTicket extends Contract {
         return customerData;
     }
 
-    /**
-     * Update provider details.
-     * Optionally mark the profile as anonymous (contact info set to null).
-     */
+
     async updateProviderDetails(ctx, newName, newContact, newRating, isAnonymous) {
         const providerId = ctx.clientIdentity.getID();
         const providerKey = ctx.stub.createCompositeKey(providerPrefix, [providerId]);
@@ -142,19 +117,22 @@ class TravelTicket extends Contract {
         return providerData;
     }
 
-    /**
- * Provider adds a new travel option.
- * @param {Context} ctx The transaction context.
- * @param {String} source Starting location.
- * @param {String} destination Destination.
- * @param {String} departureDate Date of departure (ISO string recommended).
- * @param {String} departureTime Departure time.
- * @param {String} transportMode Mode of transport (plane, train, bus).
- * @param {Number} seatCapacity Total seats available.
- * @param {Number} basePrice Base ticket price.
- */
 async addTravelOption(ctx, source, destination, departureDate, departureTime, transportMode, seatCapacity, basePrice) {
-    // Get provider info.
+    const txTimestamp = ctx.stub.getTxTimestamp();
+    
+
+    
+    const now = DateTime.now().setZone('Asia/Kolkata'); // current time in IST
+    const departureDateTime = DateTime.fromFormat(
+      `${departureDate} ${departureTime}`,
+      'yyyy-MM-dd HH:mm',
+      { zone: 'Asia/Kolkata' }
+    );
+    if (departureDateTime <= now) {
+        throw new Error('Cannot add travel option: departure time has already passed.');
+    }
+
+
     const providerId = ctx.clientIdentity.getID();
     const providerKey = ctx.stub.createCompositeKey(providerPrefix, [providerId]);
     const providerBytes = await ctx.stub.getState(providerKey);
@@ -162,19 +140,16 @@ async addTravelOption(ctx, source, destination, departureDate, departureTime, tr
         throw new Error('Provider not registered.');
     }
     let providerData = JSON.parse(providerBytes.toString());
-    
-    
+
+
     providerData.balance -= 5;
 
-    // Check for duplicate active (non-cancelled) travel option by the same provider.
-    // Loop through travel options already registered by this provider.
+
     for (const existingOptionId of providerData.travelOptions) {
         const existingOptionKey = ctx.stub.createCompositeKey(travelOptionPrefix, [existingOptionId]);
         const existingOptionBytes = await ctx.stub.getState(existingOptionKey);
         if (existingOptionBytes && existingOptionBytes.length > 0) {
             const existingOption = JSON.parse(existingOptionBytes.toString());
-            // Only check travel options that are not cancelled (if you add a "status" field to travel options,
-            // assume that a cancelled travel option would have status 'CANCELLED'; if status does not exist, then always check)
             if (!existingOption.status || existingOption.status !== 'CANCELLED') {
                 if (
                     existingOption.source === source &&
@@ -185,14 +160,13 @@ async addTravelOption(ctx, source, destination, departureDate, departureTime, tr
                     parseInt(existingOption.seatCapacity) === parseInt(seatCapacity) &&
                     parseFloat(existingOption.basePrice) === parseFloat(basePrice)
                 ) {
-                    throw new Error('A non cancelled travel option with the same details already exists.');
+                    throw new Error('A non-cancelled travel option with the same details already exists.');
                 }
             }
         }
     }
 
-    // Generate a new travel option id using current time.
-    const txTimestamp = ctx.stub.getTxTimestamp();
+    // Generate a new travelOptionId using the timestamp
     const timestamp = txTimestamp.seconds.low.toString();
     const travelOptionId = `${source}_${destination}_${departureDate}_${departureTime}_${providerId}_${timestamp}`;
     const travelOptionKey = ctx.stub.createCompositeKey(travelOptionPrefix, [travelOptionId]);
@@ -207,13 +181,16 @@ async addTravelOption(ctx, source, destination, departureDate, departureTime, tr
         departureTime,
         transportMode,
         bookedSeats: [],
-        seatCapacity: parseInt(seatCapacity),
-        availableSeats: parseInt(seatCapacity),
+        seatCapacity: parseInt(seatCapacity, 10),
+        availableSeats: parseInt(seatCapacity, 10),
         basePrice: parseFloat(basePrice)
     };
+
     await ctx.stub.putState(travelOptionKey, Buffer.from(JSON.stringify(travelOptionData)));
+
     providerData.travelOptions.push(travelOptionId);
     await ctx.stub.putState(providerKey, Buffer.from(JSON.stringify(providerData)));
+
     return travelOptionData;
 }
 
@@ -221,63 +198,66 @@ async addTravelOption(ctx, source, destination, departureDate, departureTime, tr
 
 
 
-    /**
-     * List travel options matching source and destination.
-     */
-    async listTravelOptions(ctx, source, destination) {
-        const iterator = await ctx.stub.getStateByPartialCompositeKey(travelOptionPrefix, []);
-        const options = [];
-        while (true) {
-            const res = await iterator.next();
-            if (res.value && res.value.value.toString()) {
-                const record = JSON.parse(res.value.value.toString('utf8'));
-                if (record.source === source && record.destination === destination) {
+
+        async listTravelOptions(ctx, source, destination) {
+    const iterator = await ctx.stub.getStateByPartialCompositeKey(travelOptionPrefix, []);
+    const options = [];
+    
+    
+    const now = DateTime.now().setZone('Asia/Kolkata'); 
+    while (true) {
+        const res = await iterator.next();
+        if (res.value && res.value.value.toString()) {
+            const record = JSON.parse(res.value.value.toString('utf8'));
+
+            if (record.source === source && record.destination === destination) {
+            
+                const departure = DateTime.fromFormat(
+                          `${record.departureDate} ${record.departureTime}`,
+                          'yyyy-MM-dd HH:mm',
+                          { zone: 'Asia/Kolkata' }
+                        );
+
+               
+                if (departure > now) {
                     options.push(record);
                 }
             }
-            if (res.done) {
-                await iterator.close();
-                return options;
-            }
+        }
+
+        if (res.done) {
+            await iterator.close();
+            return options;
         }
     }
+}
 
-    /**
-     * List travel options sorted by criteria with additional filtering:
-     * price range, specific provider, and availability.
-     * @param {Context} ctx The transaction context.
-     * @param {String} source Starting location.
-     * @param {String} destination Destination.
-     * @param {String} sortBy One of 'price', 'rating', or 'transportMode'.
-     * @param {String} [minPrice] (Optional) Minimum price filter.
-     * @param {String} [maxPrice] (Optional) Maximum price filter.
-     * @param {String} [filterProviderId] (Optional) Specific provider ID filter.
-     * @param {String} [onlyAvailable] (Optional) "true" to include only options with available seats.
-     */
+
+   
     async listTravelOptionsSorted(ctx, source, destination, inputdate, sortBy, minPrice, maxPrice, filterProviderId, onlyAvailable) {
     let options = await this.listTravelOptions(ctx, source, destination);
     
-    // Filter by inputdate (only keep travel options on the specified departure date)
+  
     if (inputdate) {
         options = options.filter(opt => opt.departureDate === inputdate);
     }
     
-    // Filter by availability.
+  
     if (onlyAvailable && onlyAvailable.toLowerCase() === 'true') {
         options = options.filter(opt => opt.availableSeats > 0);
     }
-    // Filter by price range.
+  
     if (minPrice) {
         options = options.filter(opt => parseFloat(opt.basePrice) >= parseFloat(minPrice));
     }
     if (maxPrice) {
         options = options.filter(opt => parseFloat(opt.basePrice) <= parseFloat(maxPrice));
     }
-    // Filter by a specific provider.
+    
     if (filterProviderId) {
         options = options.filter(opt => opt.serviceProvider === filterProviderId);
     }
-    // Enrich options with provider rating if sorting by rating.
+
     for (let i = 0; i < options.length; i++) {
             const providerKey = ctx.stub.createCompositeKey(providerPrefix, [options[i].providerId]);
             const providerBytes = await ctx.stub.getState(providerKey);
@@ -304,13 +284,7 @@ async addTravelOption(ctx, source, destination, departureDate, departureTime, tr
 
 
 
-    /**
-     * Book a ticket for a given travel option.
-     * Implements dummy payment and dynamic pricing using a deterministic timestamp.
-     * Added simulation for block confirmations.
-     * @param {Context} ctx The transaction context.
-     * @param {String} travelOptionId The travel option identifier.
-     */
+ 
 async bookTicket(ctx, travelOptionId, seatnumber) {
     const customerId = ctx.clientIdentity.getID();
     const customerKey = ctx.stub.createCompositeKey(customerPrefix, [customerId]);
@@ -326,25 +300,35 @@ async bookTicket(ctx, travelOptionId, seatnumber) {
         throw new Error('Travel option does not exist.');
     }
     let travelOptionData = JSON.parse(travelOptionBytes.toString());
+    
+    const now = DateTime.now().setZone('Asia/Kolkata'); // current time in IST
+    const departureDateTime = DateTime.fromFormat(
+      `${travelOptionData.departureDate} ${travelOptionData.departureTime}`,
+      'yyyy-MM-dd HH:mm',
+      { zone: 'Asia/Kolkata' }
+    );
 
-    // Validate that there are still available seats overall.
+
+    if (departureDateTime <= now) {
+        throw new Error('Cannot book ticket: departure time has already passed.');
+    }
+
+
     if (travelOptionData.availableSeats <= 0) {
         throw new Error('No seats available.');
     }
 
-    // Parse and validate the requested seat number.
     const requestedSeatNumber = parseInt(seatnumber, 10);
     if (isNaN(requestedSeatNumber) || requestedSeatNumber < 1 || requestedSeatNumber > travelOptionData.seatCapacity) {
         throw new Error('Seat number must be a number between 1 and the maximum seat capacity.');
     }
 
-    // First check using an iterator over existing tickets (as before)
+  
     const ticketIterator = await ctx.stub.getStateByPartialCompositeKey(ticketPrefix, [travelOptionId]);
     while (true) {
         const res = await ticketIterator.next();
         if (res.value && res.value.value.toString()) {
             let ticket = JSON.parse(res.value.value.toString('utf8'));
-            // Consider a seat booked if its ticket status is not CANCELLED.
             if (ticket.status !== 'CANCELLED' && ticket.seatNumber === requestedSeatNumber) {
                 await ticketIterator.close();
                 throw new Error('Requested seat number is already booked.');
@@ -356,76 +340,65 @@ async bookTicket(ctx, travelOptionId, seatnumber) {
         }
     }
 
-    // NEW CHECK: Using the bookedSeats array in the travel option (if maintained)
-    if (travelOptionData.bookedSeats && Array.isArray(travelOptionData.bookedSeats)) {
-        if (travelOptionData.bookedSeats.includes(requestedSeatNumber)) {
-            throw new Error('Requested seat number is already booked.');
-        }
+
+    if (Array.isArray(travelOptionData.bookedSeats) &&
+        travelOptionData.bookedSeats.includes(requestedSeatNumber)) {
+        throw new Error('Requested seat number is already booked.');
     }
 
-    // Calculate dynamic pricing as before.
+  
     const bookedCount = travelOptionData.seatCapacity - travelOptionData.availableSeats;
     const occupancyFactor = bookedCount / travelOptionData.seatCapacity;
     const dynamicFactor = 0.5;
     let dynamicPrice = travelOptionData.basePrice * (1 + occupancyFactor * dynamicFactor);
     const maxPrice = travelOptionData.basePrice * 1.5;
-    if (dynamicPrice > maxPrice) {
-        dynamicPrice = maxPrice;
-    }
+    if (dynamicPrice > maxPrice) dynamicPrice = maxPrice;
 
     if (customerData.balance < dynamicPrice) {
         throw new Error('Insufficient balance for booking.');
     }
-    customerData.balance -= (dynamicPrice+5);
+    customerData.balance -= (dynamicPrice + 5);
 
     const providerKey = ctx.stub.createCompositeKey(providerPrefix, [travelOptionData.providerId]);
     const providerBytes = await ctx.stub.getState(providerKey);
     let providerData = JSON.parse(providerBytes.toString());
     providerData.balance += dynamicPrice;
 
-    // Update customer and provider data.
-    await ctx.stub.putState(customerKey, Buffer.from(JSON.stringify(customerData)));
-    await ctx.stub.putState(providerKey, Buffer.from(JSON.stringify(providerData)));
 
-    // Decrement available seats by 1 and update bookedSeats.
     travelOptionData.availableSeats -= 1;
-    if (!travelOptionData.bookedSeats) {
-        travelOptionData.bookedSeats = [];
-    }
+    travelOptionData.bookedSeats = travelOptionData.bookedSeats || [];
     travelOptionData.bookedSeats.push(requestedSeatNumber);
     await ctx.stub.putState(travelOptionKey, Buffer.from(JSON.stringify(travelOptionData)));
 
-    // Get transaction timestamp and use it for ticket composite key.
+
     const txTimestamp = ctx.stub.getTxTimestamp();
     const timestamp = txTimestamp.seconds.low.toString();
     const bookingTime = new Date(txTimestamp.seconds.low * 1000).toISOString();
     const ticketCompositeKey = ctx.stub.createCompositeKey(ticketPrefix, [travelOptionId, customerId, timestamp]);
-    const encodedKey = Buffer.from(ticketCompositeKey).toString('base64').toString('utf8');
 
-    // Create the ticket using the requested seat number.
     const ticketData = {
         ticketId: ticketCompositeKey,
         travelOptionId,
         customerId,
-        encodedKey,
         seatNumber: requestedSeatNumber,
         bookingTime,
         timestamp,
         pricePaid: dynamicPrice,
-        // New fields for confirmation simulation and pricing transparency:
         status: 'PENDING_CONFIRMATION',
         confirmationCount: 0,
         pricingBreakdown: {
             basePrice: travelOptionData.basePrice,
-            occupancyFactor: occupancyFactor,
-            dynamicFactor: dynamicFactor,
-            dynamicPrice: dynamicPrice
+            occupancyFactor,
+            dynamicFactor,
+            dynamicPrice
         }
     };
 
     await ctx.stub.putState(ticketCompositeKey, Buffer.from(JSON.stringify(ticketData)));
+
     customerData.bookings.push(ticketCompositeKey);
     await ctx.stub.putState(customerKey, Buffer.from(JSON.stringify(customerData)));
+    await ctx.stub.putState(providerKey, Buffer.from(JSON.stringify(providerData)));
 
     return ticketData;
 }
@@ -449,19 +422,34 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
         throw new Error('Travel option does not exist.');
     }
     let travelOptionData = JSON.parse(travelOptionBytes.toString());
+    
+    
+    
+    const now = DateTime.now().setZone('Asia/Kolkata'); // current time in IST
+    const departureDateTime = DateTime.fromFormat(
+      `${travelOptionData.departureDate} ${travelOptionData.departureTime}`,
+      'yyyy-MM-dd HH:mm',
+      { zone: 'Asia/Kolkata' }
+    );
+        
+    if (departureDateTime <= now) {
+        throw new Error('Cannot book ticket: departure time has already passed.');
+    }
 
-    // Validate that there are still available seats overall.
+    
+
+   
     if (travelOptionData.availableSeats <= 0) {
         throw new Error('No seats available.');
     }
 
-    // Parse and validate the requested seat number.
+ 
     const requestedSeatNumber = parseInt(seatnumber, 10);
     if (isNaN(requestedSeatNumber) || requestedSeatNumber < 1 || requestedSeatNumber > travelOptionData.seatCapacity) {
         throw new Error('Seat number must be a number between 1 and the maximum seat capacity.');
     }
 
-    // First check using an iterator over existing tickets (as before)
+    
     const ticketIterator = await ctx.stub.getStateByPartialCompositeKey(ticketPrefix, [travelOptionId]);
     while (true) {
         const res = await ticketIterator.next();
@@ -479,14 +467,14 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
         }
     }
 
-    // NEW CHECK: Using the bookedSeats array in the travel option (if maintained)
+  
     if (travelOptionData.bookedSeats && Array.isArray(travelOptionData.bookedSeats)) {
         if (travelOptionData.bookedSeats.includes(requestedSeatNumber)) {
             throw new Error('Requested seat number is already booked.');
         }
     }
 
-    // Calculate dynamic pricing as before.
+
     const bookedCount = travelOptionData.seatCapacity - travelOptionData.availableSeats;
     const occupancyFactor = bookedCount / travelOptionData.seatCapacity;
     const dynamicFactor = 0.5;
@@ -521,11 +509,11 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
     }
     
 
-    // Update customer and provider data.
+   
     await ctx.stub.putState(customerKey, Buffer.from(JSON.stringify(customerData)));
     await ctx.stub.putState(providerKey, Buffer.from(JSON.stringify(providerData)));
 
-    // Decrement available seats by 1 and update bookedSeats.
+    
     travelOptionData.availableSeats -= 1;
     if (!travelOptionData.bookedSeats) {
         travelOptionData.bookedSeats = [];
@@ -533,14 +521,14 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
     travelOptionData.bookedSeats.push(requestedSeatNumber);
     await ctx.stub.putState(travelOptionKey, Buffer.from(JSON.stringify(travelOptionData)));
 
-    // Get transaction timestamp and use it for ticket composite key.
+
     const txTimestamp = ctx.stub.getTxTimestamp();
     const timestamp = txTimestamp.seconds.low.toString();
     const bookingTime = new Date(txTimestamp.seconds.low * 1000).toISOString();
     const ticketCompositeKey = ctx.stub.createCompositeKey(ticketPrefix, [travelOptionId, customerId, timestamp]);
     const encodedKey = Buffer.from(ticketCompositeKey).toString('base64').toString('utf8');
 
-    // Create the ticket using the requested seat number.
+
     const ticketData = {
         ticketId: ticketCompositeKey,
         travelOptionId,
@@ -579,21 +567,7 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
 
 
 
-    /**
-     * Confirm a ticket by simulating additional block confirmations.
-     * This function increments the ticket's confirmation count.
-     * When the confirmation count reaches 2 or more, the ticket status is updated to "CONFIRMED".
-     * @param {Context} ctx The transaction context.
-     * @param {String} ticketId The ticket identifier.
-     */
-     /**
-   * CONFIRM TICKET
-   * Increments the confirmation count; when it reaches 2, status becomes "CONFIRMED".
-   */
-      /**
-     * Confirm a ticket by simulating additional block confirmations.
-     * Increments the confirmation count; when it reaches 2, status becomes "CONFIRMED".
-     */
+ 
     async confirmTicket(ctx, ticketCompositeKey) {
         const ticketBytes = await ctx.stub.getState(ticketCompositeKey);
         if (!ticketBytes || ticketBytes.length === 0) {
@@ -613,13 +587,7 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
 
 
 
-    /**
-     * Cancel an existing ticket.
-     * Refunds the customer if cancellation is made more than 2 days before departure.
-     * @param {Context} ctx The transaction context.
-     * @param {String} ticketId The ticket identifier.
-     * @param {String} currentTimestamp ISO timestamp representing current time.
-     */
+
     async cancelTicket(ctx, ticketId, currentTimestamp) {
         const customerId = ctx.clientIdentity.getID();
         const ticketKey = ticketId;
@@ -655,7 +623,7 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
         await ctx.stub.putState(ticketKey, Buffer.from(JSON.stringify(ticketData)));
 
         travelOptionData.availableSeats += 1;
-        // NEW: Remove the cancelled seat from bookedSeats
+     
         if (travelOptionData.bookedSeats && Array.isArray(travelOptionData.bookedSeats)) {
             const index = travelOptionData.bookedSeats.indexOf(ticketData.seatNumber);
             if (index !== -1) {
@@ -681,25 +649,6 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
         return ticketData;
     }
 
-    /**
-     * Reschedule an existing ticket.
-     * Cancels the old ticket and books a new ticket for a different travel option.
-     * A penalty of 10% is charged if rescheduling is within 2 days of departure.
-     * @param {Context} ctx The transaction context.
-     * @param {String} ticketId The existing ticket ID.
-     * @param {String} newTravelOptionId The new travel option ID.
-     * @param {String} currentTimestamp ISO timestamp representing current time.
-     */
-    /**
- * Reschedule an existing ticket.
- * - Cancels the old ticket (processing refund if cancelled > 2 days before departure)
- * - Books a new ticket for the new travel option at full base price.
- * - Returns the newly booked ticket.
- * @param {Context} ctx The transaction context.
- * @param {String} ticketId The existing ticket ID (Base64-encoded composite key).
- * @param {String} newTravelOptionId The new travel option identifier.
- * @param {String} currentTimestamp ISO timestamp representing current time.
- */
     async rescheduleTicket(ctx, encodedTicketId, newTravelOptionId, currentTimestamp, selectedSeat) {
     // Decode the old ticket composite key
     const ticketBytes = await ctx.stub.getState(encodedTicketId);
@@ -711,7 +660,7 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
         throw new Error('Only active tickets can be rescheduled.');
     }
 
-    // Retrieve old travel option details
+   
     const oldTravelOptionKey = ctx.stub.createCompositeKey(travelOptionPrefix, [oldTicket.travelOptionId]);
     const oldTravelOptionBytes = await ctx.stub.getState(oldTravelOptionKey);
     if (!oldTravelOptionBytes || oldTravelOptionBytes.length === 0) {
@@ -719,7 +668,7 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
     }
     let oldTravelOption = JSON.parse(oldTravelOptionBytes.toString());
 
-    // Calculate refund amount using cancellation rules
+
     const departureTime = new Date(`${oldTravelOption.departureDate}T${oldTravelOption.departureTime}`);
     const currentTime = new Date(currentTimestamp);
     const msInTwoDays = 2 * 24 * 60 * 60 * 1000;
@@ -735,7 +684,6 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
     oldTicket.status = 'CANCELLED';
     await ctx.stub.putState(encodedTicketId, Buffer.from(JSON.stringify(oldTicket)));
 
-    // Increment available seats in the old travel option and remove the old seat from bookedSeats.
     oldTravelOption.availableSeats += 1;
     if (oldTravelOption.bookedSeats && Array.isArray(oldTravelOption.bookedSeats)) {
         const index = oldTravelOption.bookedSeats.indexOf(oldTicket.seatNumber);
@@ -745,30 +693,13 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
     }
     await ctx.stub.putState(oldTravelOptionKey, Buffer.from(JSON.stringify(oldTravelOption)));
     const providerKey = ctx.stub.createCompositeKey(providerPrefix, [oldTravelOption.providerId]);
-    // Process refund: update customer and provider balances.
-    /*
-    const customerId = ctx.clientIdentity.getID();
-    const customerKey = ctx.stub.createCompositeKey(customerPrefix, [customerId]);
-    const customerBytes = await ctx.stub.getState(customerKey);
-    let customerData = JSON.parse(customerBytes.toString());
-    console.log(refundAmount);
-    if (refundAmount > 0) {
-        customerData.balance += refundAmount;
-        const providerKey = ctx.stub.createCompositeKey(providerPrefix, [oldTravelOption.providerId]);
-        const providerBytes = await ctx.stub.getState(providerKey);
-        let providerData = JSON.parse(providerBytes.toString());
-        providerData.balance -= refundAmount;
-        await ctx.stub.putState(providerKey, Buffer.from(JSON.stringify(providerData)));
-    }
-    await ctx.stub.putState(customerKey, Buffer.from(JSON.stringify(customerData)));
-    */
+  
     
     
-    
-    // Book a new ticket for the new travel option using the selected seat.
+
     const newTicket = await this.bookTicket1(ctx, newTravelOptionId, selectedSeat, refundAmount, providerKey);
 
-    // Record a reference to the old ticket in the new ticket.
+ 
     newTicket.rescheduledFrom = oldTicket.ticketId;
     await ctx.stub.putState(newTicket.ticketId, Buffer.from(JSON.stringify(newTicket)));
 
@@ -791,41 +722,45 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
 
 
 
-    /**
-     * Delete a travel option.
-     * Allows a provider to remove a travel option if there are no active bookings.
-     * @param {Context} ctx The transaction context.
-     * @param {String} travelOptionId The travel option identifier.
-     */
-    async deleteTravelOption(ctx, travelOptionId) {
-        const providerId = ctx.clientIdentity.getID();
-        const travelOptionKey = ctx.stub.createCompositeKey(travelOptionPrefix, [travelOptionId]);
-        const travelOptionBytes = await ctx.stub.getState(travelOptionKey);
-        if (!travelOptionBytes || travelOptionBytes.length === 0) {
-            throw new Error('Travel option does not exist.');
-        }
-        const travelOptionData = JSON.parse(travelOptionBytes.toString());
-        if (travelOptionData.providerId !== providerId) {
-            throw new Error('Not authorized to delete this travel option.');
-        }
-        if (travelOptionData.availableSeats !== travelOptionData.seatCapacity) {
-            throw new Error('Cannot delete travel option with active bookings.');
-        }
-        await ctx.stub.deleteState(travelOptionKey);
-        return { message: 'Travel option deleted successfully.' };
-    }
 
-    /**
-     * Provider cancels an existing travel listing.
-     * Refunds all active bookings and marks the travel option as cancelled.
-     * @param {Context} ctx The transaction context.
-     * @param {String} travelOptionId The travel option identifier.
-     */
-    async cancelTravelListing(ctx, travelOptionId) {
+    async deleteTravelOption(ctx, travelOptionId) {
     const providerId = ctx.clientIdentity.getID();
     const travelOptionKey = ctx.stub.createCompositeKey(travelOptionPrefix, [travelOptionId]);
     const travelOptionBytes = await ctx.stub.getState(travelOptionKey);
+    if (!travelOptionBytes || travelOptionBytes.length === 0) {
+        throw new Error('Travel option does not exist.');
+    }
+    const travelOptionData = JSON.parse(travelOptionBytes.toString());
 
+    const txTimestamp = ctx.stub.getTxTimestamp();
+    
+    const now = DateTime.now().setZone('Asia/Kolkata'); // current time in IST
+    const departureDateTime = DateTime.fromFormat(
+      `${travelOptionData.departureDate} ${travelOptionData.departureTime}`,
+      'yyyy-MM-dd HH:mm',
+      { zone: 'Asia/Kolkata' }
+    );
+    
+    if (now >= departure) {
+        throw new Error('Cannot delete travel option after its departure time.');
+    }
+
+
+    if (travelOptionData.providerId !== providerId) {
+        throw new Error('Not authorized to delete this travel option.');
+    }
+    if (travelOptionData.availableSeats !== travelOptionData.seatCapacity) {
+        throw new Error('Cannot delete travel option with active bookings.');
+    }
+    await ctx.stub.deleteState(travelOptionKey);
+    return { message: 'Travel option deleted successfully.' };
+}
+
+
+async cancelTravelListing(ctx, travelOptionId) {
+    const providerId = ctx.clientIdentity.getID();
+    const travelOptionKey = ctx.stub.createCompositeKey(travelOptionPrefix, [travelOptionId]);
+    const travelOptionBytes = await ctx.stub.getState(travelOptionKey);
     if (!travelOptionBytes || travelOptionBytes.length === 0) {
         throw new Error('Travel option does not exist.');
     }
@@ -835,17 +770,22 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
         throw new Error('Not authorized to cancel this travel option.');
     }
 
+
+    const txTimestamp = ctx.stub.getTxTimestamp();
+    
+    
+    const now = DateTime.now().setZone('Asia/Kolkata');
+    const departureDateTime = DateTime.fromFormat(
+      `${travelOptionData.departureDate} ${travelOptionData.departureTime}`,
+      'yyyy-MM-dd HH:mm',
+      { zone: 'Asia/Kolkata' }
+    );
+
+    const refundAllowed = now < departureDateTime;
+
     const iterator = await ctx.stub.getStateByPartialCompositeKey(ticketPrefix, [travelOptionId]);
-    
-    // Fetch provider data **once**, after processing all tickets
-    // const providerKey = ctx.stub.createCompositeKey(providerPrefix, [providerId]);
-    // const providerBytes = await ctx.stub.getState(providerKey);
-    // let providerData = JSON.parse(providerBytes.toString());
-    
-    
-    
     let ticketsToCancel = [];
-    let totalRefund = 0; // Track total refund amount
+    let totalRefund = 0;
 
     while (true) {
         const res = await iterator.next();
@@ -853,7 +793,9 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
             let ticket = JSON.parse(res.value.value.toString('utf8'));
             if (ticket.status === 'PENDING_CONFIRMATION' || ticket.status === 'CONFIRMED') {
                 ticketsToCancel.push({ key: res.value.key, ticket });
-                totalRefund += ticket.pricePaid; // Accumulate total refund amount
+                if (refundAllowed) {
+                    totalRefund += ticket.pricePaid;
+                }
             }
         }
         if (res.done) {
@@ -862,40 +804,43 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
         }
     }
 
-    for (const entry of ticketsToCancel) {
-        let ticket = entry.ticket;
-        const customerKey = ctx.stub.createCompositeKey(customerPrefix, [ticket.customerId]);
-        const customerBytes = await ctx.stub.getState(customerKey);
-        
-        if (customerBytes && customerBytes.length > 0) {
-            let customerData = JSON.parse(customerBytes.toString());
-            customerData.balance += ticket.pricePaid; // Refund customer
-            await ctx.stub.putState(customerKey, Buffer.from(JSON.stringify(customerData)));
-        }
 
+    for (const { key, ticket } of ticketsToCancel) {
+        if (refundAllowed) {
+            const customerKey = ctx.stub.createCompositeKey(customerPrefix, [ticket.customerId]);
+            const customerBytes = await ctx.stub.getState(customerKey);
+            if (customerBytes && customerBytes.length > 0) {
+                let customerData = JSON.parse(customerBytes.toString());
+                customerData.balance += ticket.pricePaid;
+                await ctx.stub.putState(customerKey, Buffer.from(JSON.stringify(customerData)));
+            }
+        }
         ticket.status = 'CANCELLED';
-        await ctx.stub.putState(entry.key, Buffer.from(JSON.stringify(ticket)));
+        await ctx.stub.putState(key, Buffer.from(JSON.stringify(ticket)));
     }
-    
-    
-    const providerKey = ctx.stub.createCompositeKey(providerPrefix, [travelOptionData.providerId]);
+
+
+    const providerKey = ctx.stub.createCompositeKey(providerPrefix, [providerId]);
     const providerBytes = await ctx.stub.getState(providerKey);
     let providerData = JSON.parse(providerBytes.toString());
-    providerData.balance -= totalRefund; // Deduct total refund amount from provider's balance
-    await ctx.stub.putState(providerKey, Buffer.from(JSON.stringify(providerData)));
+    if (refundAllowed) {
+        providerData.balance -= totalRefund;
+        await ctx.stub.putState(providerKey, Buffer.from(JSON.stringify(providerData)));
+    }
+
 
     travelOptionData.status = 'CANCELLED';
     travelOptionData.availableSeats = travelOptionData.seatCapacity;
     await ctx.stub.putState(travelOptionKey, Buffer.from(JSON.stringify(travelOptionData)));
 
-    return { message: `Travel listing cancelled, ${ticketsToCancel.length} bookings refunded, total refund: ${totalRefund}` };
+    const msg = refundAllowed
+      ? `Travel listing cancelled, ${ticketsToCancel.length} bookings refunded, total refund: ${totalRefund}`
+      : `Travel listing cancelled after departure; no refunds processed.`;
+    return { message: msg };
 }
 
 
-    /**
-     * Get all tickets booked by the invoking customer.
-     * @param {Context} ctx The transaction context.
-     */
+
     async getCustomerTickets(ctx) {
         const customerId = ctx.clientIdentity.getID();
         const customerKey = ctx.stub.createCompositeKey(customerPrefix, [customerId]);
@@ -914,10 +859,7 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
         return tickets;
     }
 
-    /**
-     * Get details of the invoking customer.
-     * @param {Context} ctx The transaction context.
-     */
+
     async getCustomerDetails(ctx) {
         const customerId = ctx.clientIdentity.getID();
         const customerKey = ctx.stub.createCompositeKey(customerPrefix, [customerId]);
@@ -928,11 +870,7 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
         return customerBytes.toString();
     }
 
-    /**
-     * Get details of a specific ticket.
-     * @param {Context} ctx The transaction context.
-     * @param {String} ticketId The ticket identifier.
-     */
+
     async getTicketDetails(ctx, encodedTicketId) {
         const compositeKey = encodedTicketId;
         //const compositeKey = Buffer.from(encodedTicketId, 'base64').toString('utf8');
@@ -950,22 +888,22 @@ async bookTicket1(ctx, travelOptionId, seatnumber, customerRefund, oldProviderKe
 async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPrice, filterProviderId, onlyAvailable) {
         let options = await this.listTravelOptions(ctx, source, destination);
      
-        // Filter by availability.
+       
         if (onlyAvailable && onlyAvailable.toLowerCase() === 'true') {
             options = options.filter(opt => opt.availableSeats > 0);
         }
-        // Filter by price range.
+
         if (minPrice) {
             options = options.filter(opt => parseFloat(opt.basePrice) >= parseFloat(minPrice));
         }
         if (maxPrice) {
             options = options.filter(opt => parseFloat(opt.basePrice) <= parseFloat(maxPrice));
         }
-        // Filter by a specific provider.
+    
         if (filterProviderId) {
             options = options.filter(opt => opt.serviceProvider === filterProviderId);
         }
-        // Enrich options with provider rating if sorting by rating.
+  
         if (sortBy === 'rating') {
             for (let i = 0; i < options.length; i++) {
                 const providerKey = ctx.stub.createCompositeKey(providerPrefix, [options[i].providerId]);
@@ -995,10 +933,7 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
 
 
 
-    /**
-     * Get all travel options registered by the invoking provider.
-     * @param {Context} ctx The transaction context.
-     */
+
     async getProviderTravelOptions(ctx) {
         const providerId = ctx.clientIdentity.getID();
         const providerKey = ctx.stub.createCompositeKey(providerPrefix, [providerId]);
@@ -1018,10 +953,7 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
         return travelOptions;
     }
 
-    /**
-     * Get provider details (including balance) for UI.
-     * @param {Context} ctx The transaction context.
-     */
+
     async getProviderDetails(ctx) {
         const providerId = ctx.clientIdentity.getID();
         const providerKey = ctx.stub.createCompositeKey(providerPrefix, [providerId]);
@@ -1042,44 +974,44 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
      * @param {String} currentTimestamp ISO timestamp representing current time.
      */
     async rateProvider(ctx, ticketId, ratingStr, currentTimestamp) {
-        // Retrieve ticket to validate the travel.
+        
         const ticketKey = ticketId;
         const ticketBytes = await ctx.stub.getState(ticketKey);
         if (!ticketBytes || ticketBytes.length === 0) {
             throw new Error('Ticket does not exist.');
         }
         const ticketData = JSON.parse(ticketBytes.toString());
-        // Ensure the caller is the same as the ticket's customer.
+        
         const customerId = ctx.clientIdentity.getID();
         if (ticketData.customerId !== customerId) {
             throw new Error('Not authorized to rate this provider.');
         }
-        // Retrieve travel option to check travel date.
+      
         const travelOptionKey = ctx.stub.createCompositeKey(travelOptionPrefix, [ticketData.travelOptionId]);
         const travelOptionBytes = await ctx.stub.getState(travelOptionKey);
         if (!travelOptionBytes || travelOptionBytes.length === 0) {
             throw new Error('Travel option does not exist.');
         }
         const travelOptionData = JSON.parse(travelOptionBytes.toString());
-        // Check that currentTimestamp is after travel date.
+       
         const travelDateTime = new Date(`${travelOptionData.departureDate}T${travelOptionData.departureTime}`);
         const currentTime = new Date();
         if ((travelDateTime - currentTime) <= 1000) {
             throw new Error('Cannot rate provider before travel date.');
         }
-        // Validate rating.
+     
         const newRating = parseFloat(ratingStr);
         if (isNaN(newRating) || newRating < 0 || newRating > 5) {
             throw new Error('Rating must be a number between 0 and 5.');
         }
-        // Retrieve provider details.
+
         const providerKey = ctx.stub.createCompositeKey(providerPrefix, [travelOptionData.providerId]);
         const providerBytes = await ctx.stub.getState(providerKey);
         if (!providerBytes || providerBytes.length === 0) {
             throw new Error('Provider not registered.');
         }
         let providerData = JSON.parse(providerBytes.toString());
-        // Compute new average rating.
+        
         const currentNum = providerData.numRatings || 0;
         const currentAverage = providerData.rating || 0;
         const newAverage = ((currentAverage * currentNum) + newRating) / (currentNum + 1);
@@ -1089,11 +1021,7 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
         return providerData;
     }
     
-    	/**
-	 * Delete the customer account.
-	 * Cancels all active tickets (PENDING_CONFIRMATION or CONFIRMED) and processes full refunds.
-	 * Finally, deletes the customer record.
-	 */
+    
 	async deleteCustomer(ctx) {
 		const customerId = ctx.clientIdentity.getID();
 		const customerKey = ctx.stub.createCompositeKey(customerPrefix, [customerId]);
@@ -1102,7 +1030,7 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
 			throw new Error('Customer not registered.');
 		}
 		let customerData = JSON.parse(customerBytes.toString());
-		// Iterate over all ticket composite keys in customer bookings.
+	
 		for (const ticketKey of customerData.bookings) {
 			const ticketBytes = await ctx.stub.getState(ticketKey);
 			if (ticketBytes && ticketBytes.length > 0) {
@@ -1133,16 +1061,12 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
 				}
 			}
 		}
-		// Delete the customer record.
+
 		await ctx.stub.deleteState(customerKey);
 		return { message: 'Customer account deleted and all active tickets cancelled with refunds processed.' };
 	}
 
-	/**
-	 * Delete the provider account.
-	 * Cancels all travel options and, for each, cancels active bookings (with full refunds).
-	 * Finally, deletes the provider record.
-	 */
+
 	async deleteProvider(ctx) {
 		const providerId = ctx.clientIdentity.getID();
 		const providerKey = ctx.stub.createCompositeKey(providerPrefix, [providerId]);
@@ -1157,6 +1081,16 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
 			const travelOptionBytes = await ctx.stub.getState(travelOptionKey);
 			if (travelOptionBytes && travelOptionBytes.length > 0) {
 				let travelOptionData = JSON.parse(travelOptionBytes.toString());
+				const now = DateTime.now().setZone('Asia/Kolkata'); // current time in IST
+                const departureDateTime = DateTime.fromFormat(
+                  `${travelOptionData.departureDate} ${travelOptionData.departureTime}`,
+                  'yyyy-MM-dd HH:mm',
+                  { zone: 'Asia/Kolkata' }
+                );
+				
+				if(departureDateTime <= now){
+				    continue;
+				}
 				// Cancel active bookings for this travel option.
 				const iterator = await ctx.stub.getStateByPartialCompositeKey(ticketPrefix, [travelOptionId]);
 				while (true) {
@@ -1173,9 +1107,9 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
 								customerData.balance += refundAmount;
 								await ctx.stub.putState(customerKey, Buffer.from(JSON.stringify(customerData)));
 							}
-							// Deduct refund from provider.
+				
 							providerData.balance -= refundAmount;
-							// Mark ticket as cancelled.
+					
 							ticket.status = 'CANCELLED';
 							await ctx.stub.putState(res.value.key, Buffer.from(JSON.stringify(ticket)));
 						}
@@ -1185,13 +1119,13 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
 						break;
 					}
 				}
-				// Mark travel option as cancelled.
+		
 				travelOptionData.status = 'CANCELLED';
 				travelOptionData.availableSeats = travelOptionData.seatCapacity;
 				await ctx.stub.putState(travelOptionKey, Buffer.from(JSON.stringify(travelOptionData)));
 			}
 		}
-		// Delete the provider record.
+		
 		await ctx.stub.deleteState(providerKey);
 		return { message: 'Provider account deleted, all travel options cancelled and refunds processed.' };
 	}
@@ -1204,15 +1138,9 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
    * - If pending tickets > available seats, confirm the earliest pending tickets up to available seats,
    *   and cancel (with full refund) the rest.
    */
-   /**
-     * AUTO-CONFIRM TICKETS FOR A TRAVEL OPTION  
-     * If the current time is within 2 hours of departure, then:
-     * - If pending tickets ≤ available seats, confirm all pending tickets.
-     * - If pending tickets > available seats, confirm the earliest pending tickets up to available seats,
-     *   and cancel (with full refund) the rest.
-     */
+  
     async autoConfirmTicketsForTravelOption(ctx, travelOptionId, currentTimestamp) {
-      // Retrieve travel option.
+   
       const travelOptionKey = ctx.stub.createCompositeKey(travelOptionPrefix, [travelOptionId]);
       const travelOptionBytes = await ctx.stub.getState(travelOptionKey);
       if (!travelOptionBytes || travelOptionBytes.length === 0) {
@@ -1223,7 +1151,7 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
       const departureTime = new Date(`${travelOptionData.departureDate}T${travelOptionData.departureTime}`);
       const currentTime = new Date(currentTimestamp);
       const twoHoursMs = 2 * 60 * 60 * 1000;
-      // Query pending tickets for this travel option.
+   
       const iterator = await ctx.stub.getStateByPartialCompositeKey(ticketPrefix, [travelOptionId]);
       let pendingTickets = [];
       while (true) {
@@ -1240,7 +1168,6 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
         }
       }
 
-      // Sort pending tickets by bookingTime (earliest first)
       pendingTickets.sort((a, b) => new Date(a.bookingTime) - new Date(b.bookingTime));
 
       const vacantSeats = travelOptionData.availableSeats;
@@ -1257,7 +1184,7 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
         // travelOptionData.availableSeats -= pendingTickets.length;
         await ctx.stub.putState(travelOptionKey, Buffer.from(JSON.stringify(travelOptionData)));
       } else {
-        // Confirm only the earliest pending tickets up to vacantSeats.
+        
         for (let i = 0; i < pendingTickets.length; i++) {
           let ticket = pendingTickets[i];
           if (i < vacantSeats) {
@@ -1294,10 +1221,6 @@ async listTravelOptionsSorted1(ctx, source, destination, sortBy, minPrice, maxPr
     }
 
 
-  /**
-   * GET ALL TRAVEL OPTIONS
-   * Returns all travel options on the ledger.
-   */
   async getAllTravelOptions(ctx) {
     const iterator = await ctx.stub.getStateByPartialCompositeKey(travelOptionPrefix, []);
     let travelOptions = [];

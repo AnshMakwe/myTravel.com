@@ -1,7 +1,4 @@
-/*
- * serverRateProvider.js
- * Rate a provider.
- */
+
 'use strict';
 const { Gateway, Wallets } = require('fabric-network');
 const fs = require('fs');

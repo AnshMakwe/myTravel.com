@@ -33,6 +33,7 @@ class TravelTicket extends Contract {
             balance: 1000,
             bookings: []  // list of ticket composite keys
         };
+        console.info('Hello world');
         await ctx.stub.putState(customerKey, Buffer.from(JSON.stringify(customerData)));
         return customerData;
     }
@@ -79,6 +80,7 @@ class TravelTicket extends Contract {
     await ctx.stub.putState(customerKey, Buffer.from(JSON.stringify(customerData)));
     return customerData;
 }
+
 
 
 

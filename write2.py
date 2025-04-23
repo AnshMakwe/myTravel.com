@@ -1,7 +1,7 @@
 import os
 import sys
 
-def list_files_with_contents(folder_path, output_file='output28.txt'):
+def list_files_with_contents(folder_path, output_file='output29.txt'):
     with open(output_file, 'w', encoding='utf-8') as out_file:
         for root, dirs, files in os.walk(folder_path):
             for file in files:
@@ -26,5 +26,5 @@ if __name__ == "__main__":
         sys.exit(1)
 
     list_files_with_contents(folder_path)
-    print(f"Done. File list with contents written to 'output22.txt'")
+    print(f"Done. File list with contents written to 'output29.txt'")
 

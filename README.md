@@ -85,9 +85,16 @@ Then run:
   cd ..
 ```
 
-### For fabric netwrok setup run:
+## Initial Setup:
+
+## Tear down any existing network
 ```bash
-  ./startFabric.sh javascript
+  sudo ./networkDown.sh
+```
+
+### For fabric network setup run:
+```bash
+  ./first.sh javascript
 ```
 ### Network Down and Docker Cleanup:
 If the network is already running and you need to bring it down before re-deploying
@@ -99,6 +106,17 @@ Run the following command to stop the network:
 ```bash
   sudo docker container prune-f
 ```
+
+## Subsequent Upgrades:
+### Keep the network running, avoid networkDown.sh so that wallets, ledger state and peers remain intact
+
+
+### Deploy new chaincode version using:
+```bash
+  ./second.sh javascript
+```
+
+
 
 ### Backend Deployment:
 Navigate to backend folder backend/ and run:

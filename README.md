@@ -81,7 +81,7 @@ git clone https://github.com/AnshMakwe/myTravel.com.git
 
 Open myTravel.com folder and run:
 ```bash
-cd myTravel.com  
+cd myTravel.com/
 npm install
 ```
 

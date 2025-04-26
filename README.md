@@ -18,41 +18,49 @@ To install the above mentioned prerequisites, use:
 
 ### Update and upgrade your system:
 ```bash
-  ssudo apt update
-  sudo apt upgrade -y
+sudo apt update
+sudo apt upgrade -y
 ```
 
 ### Install cURL (if not already installed):
 ```bash
-  sudo apt-get install curl -y
+sudo apt-get install curl -y
 ```
 
 ### Install Docker and Docker Compose (if not already installed):
 ```bash
-  sudo apt install docker
-  sudo apt install docker-compose 
+sudo apt install docker
+sudo apt install docker-compose 
 ```
 ### Verify Docker is installed:
 ```bash
-  docker --version
-  docker-compose --version
+docker --version
+docker-compose --version
 ```
 ### Add the current user to the Docker group:
 ```bash
-  sudo usermod -aG docker $USER
+sudo usermod -aG docker $USER
 ```
-### Install Node.js and npm using package manager:
+### Install jq:
 ```bash
-  sudo apt install nodejs npm
+sudo apt install jq
 ```
 ### Check installed version:
 ```bash
-  node -v
-  npm -v
+jq --version
+```
+### Install Node.js and npm using package manager:
+```bash
+sudo apt install nodejs npm
+```
+### Check installed version:
+```bash
+node -v
+npm -v
 ```
 ### Install nodemon globally:
 ```bash
-  sudo npm install -g nodemon
+sudo npm install -g nodemon
 ```
 
 
@@ -64,47 +72,56 @@ To install the above mentioned prerequisites, use:
 
 ### To deploy this project
 
-Clone the myTravel.com repository
+Clone the myTravel.com repository using:
+```bash
+mkdir test
+cd test
+git clone https://github.com/AnshMakwe/myTravel.com.git
+```
 
 Open myTravel.com folder and run:
 ```bash
-  npm install
+cd myTravel.com  
+npm install
 ```
 
 
 Navigate to chaincode/contract/javascript
 Then run:
 ```bash
-  npm install
-  npm install luxon
+cd chaincode/contract/javascript
+npm install
+npm install luxon
 ```
 
 ### Navigate to sdk/javascript and run:
 ```bash
-  npm install
-  cd ..
+cd ../../..
+cd sdk/javascript
+npm install
+cd ..
 ```
 
 ## Initial Setup:
 
 ## Tear down any existing network
 ```bash
-  sudo ./networkDown.sh
+sudo ./networkDown.sh
 ```
 
 ### For fabric network setup run:
 ```bash
-  ./first.sh javascript
+./first.sh javascript
 ```
 ### Network Down and Docker Cleanup:
 If the network is already running and you need to bring it down before re-deploying
 Run the following command to stop the network:
 ```bash
-  sudo ./networkDown.sh
+sudo ./networkDown.sh
 ```
 ### Clean up Docker containers:
 ```bash
-  sudo docker container prune-f
+sudo docker container prune-f
 ```
 
 ## Subsequent Upgrades:
@@ -113,7 +130,7 @@ Run the following command to stop the network:
 
 ### Deploy new chaincode version using:
 ```bash
-  ./second.sh javascript
+./second.sh javascript
 ```
 
 
@@ -121,26 +138,30 @@ Run the following command to stop the network:
 ### Backend Deployment:
 Navigate to backend folder backend/ and run:
 ```bash
-  npm install
-  npm install dotenv
+cd ..
+cd backend/
+npm install
+npm install dotenv
 ```
 to install dependencies
 
 ### Launch the server:
 ```bash
-  nodemon server.js
+nodemon server.js
 ```
 
 ### Frontend Deployment:
 In a seperate terminal navigate to the client folder client/ and run:
 ```bash
-  npm install
+cd ..
+cd client/
+npm install
 ```
 to install dependencies
 
 ### Start the development server:
 ```bash
-  npm start
+npm start
 ```
 ### Once the client starts, the My Ticket website will be accessible at localhost:3000.
 

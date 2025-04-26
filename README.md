@@ -29,7 +29,9 @@ sudo apt-get install curl -y
 
 ### Install Docker and Docker Compose (if not already installed):
 ```bash
-sudo apt install docker
+sudo apt install docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
 sudo apt install docker-compose 
 ```
 ### Verify Docker is installed:

@@ -57,6 +57,8 @@ docker compose version
 ```bash
 sudo usermod -aG docker $USER
 ```
+Make sure to restart your computer!
+
 ### Install jq:
 ```bash
 sudo apt install jq
@@ -130,7 +132,7 @@ sudo ./networkDown.sh
 ./first.sh javascript
 ```
 ### Network Down and Docker Cleanup:
-If the network is already running and you need to bring it down before re-deploying
+If the network is already running and you need to bring it down completely, (However, please note that we do provide a feature to redploy your chain-code with subtle variations without bringing the network down, which is discussed later)
 Run the following command to stop the network:
 ```bash
 sudo ./networkDown.sh

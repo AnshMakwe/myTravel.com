@@ -8,11 +8,13 @@ services:
   couchdb0:
     container_name: couchdb0
     image: couchdb:3.4.2
+    restart: always
     labels:
       service: hyperledger-fabric
     environment:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=adminpw
+      - COUCHDB_HTTP_RANGE=false
     ports:
       - "5984:5984"
     volumes:

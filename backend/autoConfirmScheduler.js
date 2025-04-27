@@ -147,7 +147,7 @@ async function scheduler() {
 }
 
 
-setInterval(scheduler, 5 * 60 * 1000);
+setInterval(scheduler, 2 * 60 * 1000);
 
 
 if (require.main === module) {
